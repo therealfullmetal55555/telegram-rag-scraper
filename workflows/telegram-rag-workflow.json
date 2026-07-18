@@ -1,0 +1,50 @@
+{
+  "name": "Auto-Updating Telegram RAG Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "competitor-intel",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "10000000-0000-0000-0000-000000000001",
+      "name": "Intel Webhook Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Vectorization & Metadata Preparation\nconst items = $input.first().json.messages || [];\nreturn items.map(m => ({\n  json: {\n    id: 'TG_' + m.id,\n    text: m.text,\n    source: m.source,\n    date: m.date\n  }\n}));"
+      },
+      "id": "10000000-0000-0000-0000-000000000002",
+      "name": "Prepare Vector Embeddings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "index": "competitor-intel"
+      },
+      "id": "10000000-0000-0000-0000-000000000003",
+      "name": "Pinecone Vector Upsert",
+      "type": "n8n-nodes-base.pinecone",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Intel Webhook Intake": {
+      "main": [[{"node": "Prepare Vector Embeddings", "type": "main", "index": 0}]]
+    },
+    "Prepare Vector Embeddings": {
+      "main": [[{"node": "Pinecone Vector Upsert", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
